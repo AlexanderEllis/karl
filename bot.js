@@ -1,34 +1,25 @@
-var slack = require('@slack/client');
-var RtmClient = slack.RtmClient;
-var CLIENT_EVENTS = slack.CLIENT_EVENTS;
-var RTM_EVENTS = slack.RTM_EVENTS;
-var RTM_CLIENT_EVENTS = slack.CLIENT_EVENTS.RTM;
+var SlackBot = require('slackbots');
 
 var config = require('./config');
 
 var bot_token = process.env.SLACK_BOT_TOKEN || config.SLACK_BOT_TOKEN || '';
+var bot_name = 'mrsocks';
 
-var rtm = new RtmClient(bot_token);
-rtm.start();
+var params = {
+icon_emoji: ':dog:'
+};
 
-// The client will emit an RTM.AUTHENTICATED event on successful connection, with the `rtm.start` payload if you want to cache it
-rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, function (rtmStartData) {
-  console.log(`Logged in as ${rtmStartData.self.name} of team ${rtmStartData.team.name}, but not yet connected to a channel`);
+var bot = new SlackBot({
+  token: bot_token,
+  name: bot_name
 });
 
-var channel = process.env.CHANNEL_ID || config.CHANNEL_ID || ''; 
-// MUST be a channel, group, DM, or user ID (C1234)
-
-rtm.on(RTM_CLIENT_EVENTS.RTM_CONNECTION_OPENED, function () {
-  console.log(`Connected to channel ${channel}`);
-  rtm.sendMessage('Hello!', channel);
+bot.on('start', function() {
+  bot.postMessageToChannel('general', 'Hello!', params);
 });
 
-rtm.on(RTM_EVENTS.MESSAGE, function handleRtmMessage(message) {
-  console.log('Message:', message); 
-  if (message.text == 'Hi') {
-    rtm.sendMessage('Hi!!', message.channel);
-  } else {
-  rtm.sendMessage('Thank you for your message! Unfortunately I can\'t currently respond.', message.channel);
+bot.on('message', function(data) {
+  if (data.type === 'message' && data.subtype !== 'bot_message') {
+    bot.postMessageToChannel('general', 'Hi!!', params);
   }
 });
